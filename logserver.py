@@ -4,7 +4,7 @@ import logging.handlers
 import socketserver
 import struct
 from logging.config import dictConfig
-
+import config
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     """Handler for a streaming logging request.
@@ -48,6 +48,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         # cycles and network bandwidth!
         logger.handle(record)
 
+
 class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
     """
     Simple TCP socket-based logging receiver suitable for testing.
@@ -75,69 +76,13 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
             abort = self.abort
 
 
-def prepare_logging():
-    logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'standard': {
-                'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-                'datefmt' : "%d/%b/%Y %H:%M:%S"
-            },
-        },
-        'handlers': {
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'standard'
-            },
-            'file-debug': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': 'logs/debug.log',
-                'formatter': 'standard',
-                'backupCount': 5,
-                'maxBytes': 100000
-            },
-            'file': {
-                'level': 'INFO',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': 'logs/info.log',
-                'formatter': 'standard',
-                'backupCount': 5,
-                'maxBytes': 100000
-            },
-        },
-        'loggers': {
-            'plumbum': {
-                'propagate': False,
-                'handlers': ['console', 'file', 'file-debug'],
-                'level': 'DEBUG',
-            },
-            '__main__': {
-                'propagate': False,
-                'handlers': ['console', 'file', 'file-debug'],
-                'level': 'DEBUG',
-            },
-            '': {
-                'propagate': False,
-                'handlers': ['console', 'file', 'file-debug'],
-                'level': 'DEBUG',
-            },
-        }
-    }
-
-
-    dictConfig(logging_config)
-
 def main():
-    prepare_logging()
-    # logging.basicConfig(
-    #     format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')
-    #
-    tcpserver = LogRecordSocketReceiver()
+    # setup logging
+    dictConfig(config.LOG_CONFIG)
+
+    tcp_server = LogRecordSocketReceiver()
     print('About to start TCP server...')
-    tcpserver.serve_until_stopped()
+    tcp_server.serve_until_stopped()
 
 if __name__ == '__main__':
     main()
